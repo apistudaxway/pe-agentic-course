@@ -97,9 +97,28 @@ Full result saved to `output/output_module3.json`.
 
 ---
 
-## What's happening under the hoods?
+## Key Takeaway
 
 `finished=true` is the loop's exit condition — not `max_iterations`. The agent stops as soon as it has enough information, which may be after 1 iteration or 5. This is the key difference between a ReAct agent and a fixed-step pipeline: the agent decides when it is done. `max_iterations` is a safety ceiling, not the expected number of steps. An agent that always runs to `max_iterations` is not reasoning — it is just looping.
+
+---
+
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module3-react-loop.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 3 — ReAct Loop` |
+| Trigger | Push to `module3/**` or `shared/**`, or manual via Actions tab |
+| Script run | `python module3/agent.py` |
+| Output artifact | `module3-output` → `output/output_module3.json` |
+
+The workflow runs automatically when you push any change inside `module3/` or `shared/`. You can also trigger it manually: Actions tab → "Module 3 — ReAct Loop" → Run workflow.
+
+The artifact captures the full multi-iteration trace — each `thought`, `action`, and `observation` Claude produced before reaching `finished=true`. This is worth reviewing: the number of iterations and the reasoning path will vary between runs, which is the expected behaviour of a ReAct agent.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret).
 
 ---
 
@@ -110,3 +129,4 @@ Full result saved to `output/output_module3.json`.
 - Final result has `finished=true`, `confidence`, and `recommended_action`
 - Full output saved to `output/output_module3.json`
 - If `escalate=true`, an escalation notice is printed
+- GitHub Actions workflow completes and `module3-output` artifact is attached to the run

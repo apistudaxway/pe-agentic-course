@@ -66,6 +66,7 @@ ANTHROPIC_API_KEY=sk-... python module1/hello_claude.py
 ANTHROPIC_API_KEY=sk-... python module1/agent.py
 ```
 
+**Key Takeaway:** The system prompt is the program. Claude returns the same three keys every time because the system prompt specifies the exact JSON schema. This predictability is what makes agents composable.
 
 ---
 
@@ -77,9 +78,29 @@ Look at `agent-config.yml` for the expected output schema. Attempt your own impl
 
 ---
 
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module1-hello-agent.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 1 — Hello Agent` |
+| Trigger | Push to `module1/**` or `shared/**`, or manual via Actions tab |
+| Script run | `python module1/agent.py` |
+| Output artifact | `module1-output` → `output/output_module1.json` |
+
+The workflow runs automatically when you push any change inside the `module1/` or `shared/` folders. You can also trigger it manually: Actions tab → "Module 1 — Hello Agent" → Run workflow.
+
+After the run completes, open the workflow run and click the **Artifacts** section at the bottom to download `module1-output` and inspect the JSON output your agent produced.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret).
+
+---
+
 ## Success Criteria
 
 - `verify_setup.py` reports all four checks green
 - `hello_claude.py --mock` prints valid JSON with no parse errors
 - Live run returns all three keys: `summary`, `likely_cause`, `next_step`
 - Output saved to `output/output_module1.json`
+- GitHub Actions workflow completes and `module1-output` artifact is attached to the run

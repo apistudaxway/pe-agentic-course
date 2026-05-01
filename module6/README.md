@@ -121,9 +121,28 @@ Both system prompts are already written — study them before implementing the `
 
 ---
 
-## Parallels to production 
+## Key Takeaway
 
 Phase 1 routing is cheap on purpose. Classifying the question first — before fetching any data — means you only pull the observability signals that are actually relevant to the question type. An incident query needs anomalies and events; a health check only needs `/health`. Without routing, the agent would over-fetch on every query and send irrelevant data to Claude, increasing token cost and degrading reasoning quality. The two-phase pattern scales: adding a new question type means adding a new route and a new data-fetch strategy — not rewriting the agent. This is the same pattern used in production AIOps systems.
+
+---
+
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module6-conv-ops.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 6 — Conversational Ops` |
+| Trigger | Push to `module6/**` or `shared/**`, or manual via Actions tab |
+| Script run | `python module6/agent.py` |
+| Output artifact | `module6-output` → `output/output_module6.json` |
+
+The workflow runs `agent.py` (the simplified REPL alternative) rather than `conversational_agent.py`. In CI there is no interactive terminal, so the REPL script runs a single preconfigured query against `sample_data.json` — no live mock server is needed.
+
+When you run `conversational_agent.py` locally with the two-terminal setup, you are adding the live mock server to the loop. The GitHub Actions run shows you the same structured JSON output but using the static snapshot, which is reproducible and does not depend on a running server.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret).
 
 ---
 
@@ -134,4 +153,5 @@ Phase 1 routing is cheap on purpose. Classifying the question first — before f
 - Agent correctly routes the query (incident / investigation / health_check)
 - Response contains `answer`, `causal_chain` (list), `confidence`, and `escalate`
 - Full output saved to `output/output_module6.json`
+- GitHub Actions workflow completes and `module6-output` artifact is attached to the run
 - If stuck, see `solutions/solution.py`

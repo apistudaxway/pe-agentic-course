@@ -73,6 +73,7 @@ The script implements the five-step agentic loop:
 4. `step4_execute_action()` — print `recommended_action`; if `escalate=true`, print escalation notice
 5. `step5_verify_result()` — return True if output meets success criteria
 
+**Key Takeaway:** The five steps make testing trivial — you can unit-test `step3_parse_json()` independently of the API call, and mock `step2_call_api()` without touching the prompt logic.
 
 ---
 
@@ -95,10 +96,30 @@ If you get stuck, check `solutions/solution.py` for the reference implementation
 
 ---
 
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module2-first-agent.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 2 — First AI Agent` |
+| Trigger | Push to `module2/**` or `shared/**`, or manual via Actions tab |
+| Script run | `python module2/agent.py` |
+| Output artifact | `module2-output` → `output/output_module2.json` |
+
+The workflow runs automatically when you push any change inside `module2/` or `shared/`. You can also trigger it manually: Actions tab → "Module 2 — First AI Agent" → Run workflow.
+
+This is the first module where you can see your agent running in a real CI environment. The output artifact lets you compare what Claude produced on GitHub's runners against your local run — same prompt, same input, same structured JSON.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret).
+
+---
+
 ## Success Criteria
 
 - `triage_agent.py --mock` runs cleanly and prints valid JSON
 - Live run returns all four keys: `diagnosis`, `confidence`, `recommended_action`, `escalate`
 - `confidence` is `HIGH` for the `sample_log.txt` OOM scenario (the log is unambiguous)
 - `escalate` is `false` — agent has a concrete fix, no human needed
-- `output/output_module2.json` is written and GitHub Actions Step Summary is visible
+- `output/output_module2.json` is written
+- GitHub Actions workflow completes and `module2-output` artifact is attached to the run

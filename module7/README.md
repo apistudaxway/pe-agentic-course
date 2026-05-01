@@ -4,7 +4,7 @@
 
 A multi-agent orchestration system with two specialist agents running in parallel, a conflict-detection step, and a synthesis agent that produces a unified action plan:
 
-- **`orchestrator.py`** — coordinates two specialist agents (FinOps Cost Optimizer + Incident Responder) running in parallel threads, detects conflicts between their outputs, and calls a synthesis agent to resolve them.
+- **`orchestrator.py`** — coordinates two specialist agents (Gate Agent + Rollback Agent) running in parallel threads, detects conflicts between their outputs, and calls a synthesis step to resolve them.
 - **`interpret.py`** — reads the orchestrator's JSON output and uses Claude to convert it into a prioritised task list and a Slack-ready escalation memo.
 
 ---
@@ -16,7 +16,7 @@ A multi-agent orchestration system with two specialist agents running in paralle
 | `orchestrator.py` | **Exercise file** — implement the three TODO functions |
 | `interpret.py` | **Secondary script** — converts orchestrator output to human-readable format |
 | `agent.py` | Simplified single-agent entry point |
-| `sample_data.json` | Platform event with conflicting cost and incident signals |
+| `sample_data.json` | Platform incident event (P1 — payment service errors, auth OOMKill) |
 | `agent-config.yml` | Model and output schema |
 | `solutions/solution.py` | **Reference implementation** — read this only after your own attempt |
 
@@ -63,8 +63,8 @@ Platform Event
      │
      ├──────────────────┐
      ▼                  ▼
-Cost Optimizer    Incident Responder
-(parallel)        (parallel)
+ Gate Agent       Rollback Agent
+ (parallel)        (parallel)
      │                  │
      └──────────────────┘
              │
@@ -74,11 +74,7 @@ Cost Optimizer    Incident Responder
       ┌──────┴──────┐
       ▼             ▼
   No Conflict    Conflict
-  → PROCEED    → ESCALATE
-             │
-             ▼
-    Synthesis Agent
-    (unified plan)
+  → SYNTHESISE → ESCALATE
 ```
 
 All messages flow through the orchestrator. Specialists never communicate with each other directly.
@@ -87,31 +83,44 @@ All messages flow through the orchestrator. Specialists never communicate with e
 
 ## Conflict Scenarios (from sample_data.json)
 
-| Scenario | Cost Optimizer | Incident Responder | Outcome |
-|----------|---------------|-------------------|---------|
-| `no_conflict` | Scale down idle services | No active incident | PROCEED |
-| `partial_conflict` | APPROVE_WITH_CONDITIONS | SCHEDULED rollback | Soft escalate |
-| `full_conflict` | APPROVE | IMMEDIATE rollback | Hard escalate (Safety First) |
+| Scenario | Gate Agent | Rollback Agent | Outcome |
+|----------|-----------|----------------|---------|
+| `no_conflict` | APPROVE | No rollback | SYNTHESISE — safe to deploy |
+| `partial_conflict` | APPROVE_WITH_CONDITIONS | SCHEDULED rollback | SOFT_ESCALATE — inform on-call |
+| `full_conflict` | APPROVE | IMMEDIATE rollback | SAFETY_FIRST_ESCALATE — halt all deploys |
 
 ---
 
-## Expected Output
+## Expected Output (`full_conflict` scenario)
 
 ```json
 {
-  "cost_optimizer": { "specialist": "cost_optimizer", "actions": ["scale_down: recommendation-service"], ... },
-  "incident_responder": { "specialist": "incident_responder", "actions": ["investigate: checkout-service"], "protected_services": ["checkout-service", "payment-api"], ... },
-  "synthesis": {
-    "conflict_detected": true,
-    "conflict_description": "No direct conflict — cost optimizer targets idle services only.",
-    "unified_actions": ["scale_down: recommendation-service", "investigate: checkout-service"],
-    "final_decision": "ESCALATE",
-    "escalate": true
+  "gate_agent": {
+    "decision": "APPROVE",
+    "confidence": "HIGH",
+    "rationale": "CI pipeline passed all gates before deploy. Snapshot taken 45 minutes ago.",
+    "blocking_issues": [],
+    "conditions": [],
+    "risk_score": "LOW",
+    "escalate": false
+  },
+  "rollback_agent": {
+    "rollback_recommended": true,
+    "severity": "IMMEDIATE",
+    "trigger": "latency_p95_delta exceeded 18.4% and error_rate_pct > 10% post-deploy.",
+    "rollback_target": "v1.8.2",
+    "escalate": false
+  },
+  "conflict": {
+    "detected": true,
+    "type": "HARD_CONFLICT",
+    "resolution": "SAFETY_FIRST_ESCALATE",
+    "summary": "Gate Agent: APPROVE (stale pre-deploy snapshot). Rollback Agent: IMMEDIATE rollback (live post-deploy data). Hard conflict — Safety First: escalate and halt all deploys until human reviews."
   }
 }
 ```
 
-Full result saved to `output/output_module7_unified_plan.json`.
+Full result saved to `output/orchestrator_module7.json`.
 
 ---
 
@@ -136,9 +145,26 @@ If you get stuck, see `solutions/solution.py`.
 
 ---
 
-## Running agents safely
+## Key Takeaway
 
-**Safety First** is the non-negotiable conflict resolution rule. When the Cost Optimizer recommends scaling down a service and the Incident Responder marks that same service as protected, the Incident Responder wins — always. Cost optimization is reversible; an outage during a live incident is not. The synthesis agent's job is not to find a compromise between the two specialists: it is to implement the Safety First rule and explain the reasoning. Notice that the `full_conflict` scenario produces `final_decision: ESCALATE` even when the conflict is technically resolvable — because the synthesis agent cannot verify the incident state in real time. Escalating is the correct and honest answer when the agent is uncertain about infrastructure safety.
+**Safety First** is the non-negotiable conflict resolution rule. When the Gate Agent says APPROVE (based on a pre-deploy snapshot) and the Rollback Agent says IMMEDIATE rollback (based on live post-deploy signals), the Rollback Agent wins — always. Deployment approval is reversible; a live incident is not. The conflict detector's job is not to find a compromise: it is to implement the Safety First rule and escalate. Notice that `full_conflict` produces `resolution: SAFETY_FIRST_ESCALATE` — because the orchestrator cannot verify live infrastructure state in real time, and escalating to a human is the only safe answer when agents contradict each other on a live system.
+
+---
+
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module7-multi-agent.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 7 — Multi-Agent` |
+| Trigger | Push to `module7/**` or `shared/**`, or manual via Actions tab |
+| Script run | `python module7/agent.py` |
+| Output artifact | `module7-output` → `output/output_module7.json` |
+
+The workflow runs `agent.py` — the simplified single-agent entry point. In CI, `orchestrator.py` is not run directly because it requires a `--scenario` flag to produce deterministic output. Run `orchestrator.py` locally with `--mock` or a specific `--scenario` to test the full multi-agent orchestration with parallel specialists and conflict detection.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret).
 
 ---
 
@@ -149,6 +175,7 @@ If you get stuck, see `solutions/solution.py`.
 - Conflict detection correctly identifies overlapping targets
 - Synthesis agent produces `unified_actions` and `final_decision`
 - `interpret.py` produces a readable task list and escalation memo
-- Full output saved to `output/output_module7_unified_plan.json`
+- Full output saved to `output/orchestrator_module7.json`
 - If `escalate=true`, an escalation notice is printed
+- GitHub Actions workflow completes and `module7-output` artifact is attached to the run
 - If stuck, see `solutions/solution.py`

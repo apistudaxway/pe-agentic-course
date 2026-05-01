@@ -108,9 +108,28 @@ If you get stuck, see `solutions/solution.py` for the reference implementation.
 
 ---
 
-## Teaching Point
+## Key Takeaway
 
 The gate and the monitor are intentionally two separate agents with two separate failure modes. The gate is **preventive** — it blocks a bad deploy before it reaches production. The monitor is **reactive** — it catches the failures that slip through. A single agent trying to do both jobs would conflate pre-deploy reasoning (static analysis of pipeline results) with post-deploy reasoning (live production signals). Keeping them separate also means you can tune each agent's confidence threshold and system prompt independently. The monitor's `rollback_recommended` decision is a different kind of judgment than the gate's `decision` — one is about risk, the other is about live impact.
+
+---
+
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module5-quality-gate.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 5 — Quality Gate` |
+| Trigger | Push to `module5/**` or `shared/**`, or manual via Actions tab |
+| Script run | `python module5/triage_agent.py` |
+| Output artifact | `module5-output` → `output/output_module5.json` |
+
+The workflow runs the quality gate agent automatically on every push to `module5/` or `shared/`. This mirrors how a real pre-deploy gate works: any change to the agent or its config triggers a fresh evaluation against the pipeline results in `sample_data.json`.
+
+Note that `monitor.py` (the post-deploy watchdog) is not included in this workflow — it is designed to run on a timed schedule or post-deploy hook, not on code push. Run it locally to see the rollback decision.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret).
 
 ---
 
@@ -121,4 +140,5 @@ The gate and the monitor are intentionally two separate agents with two separate
 - `monitor.py` returns `rollback_recommended` (boolean) with a `severity`
 - Editing `quality-gates.json` changes the gate decision without code changes
 - Full output saved to `output/output_module5.json`
+- GitHub Actions workflow completes and `module5-output` artifact is attached to the run
 - If stuck, see `solutions/solution.py`

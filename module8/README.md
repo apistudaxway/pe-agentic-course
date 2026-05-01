@@ -8,6 +8,7 @@ This is the final module. You complete a real 5-step pipeline agent that diagnos
 
 Open `module8/platform_agent.py`. Step 1 (INGEST) is fully implemented as a worked example — read it, then complete Steps 2–5 by implementing the four TODO functions and run the full pipeline yourself.
 
+**Budget: ~45 minutes.**
 
 ---
 
@@ -47,7 +48,7 @@ python module8/platform_agent.py --simulate --mock
 
 You will see five JSON blocks — INGEST, DIAGNOSE, GATE, FIX/ESCALATE, REPORT — followed by the final report and a 🔴 ESCALATION message. This is exactly what your completed functions will produce.
 
-### Step 3 — Read the worked example
+### Step 2 — Read the worked example
 
 Open `platform_agent.py` and read `run_step_ingest()` carefully. Every other step follows the same three-line pattern:
 
@@ -56,9 +57,9 @@ def run_step_ingest(event: dict) -> dict:
     return run_step("INGEST", INGEST_PROMPT, event)
 ```
 
-The difference for Steps 2–5 is that you need to build a richer `context` dict that passes results from earlier steps to Claude.
+The difference for Steps 3–6 is that you need to build a richer `context` dict that passes results from earlier steps to Claude.
 
-### Step 6 — Complete `run_step_diagnose()`
+### Step 3 — Complete `run_step_diagnose()`
 
 Build a context dict that contains both the original `event` and the `ingest` result, then call `run_step()` with `DIAGNOSE_PROMPT`.
 
@@ -71,23 +72,17 @@ def run_step_diagnose(event: dict, ingest: dict) -> dict:
     return run_step("DIAGNOSE", DIAGNOSE_PROMPT, context)
 ```
 
-Run after completing this step:
-
-```bash
-python module8/platform_agent.py --simulate --mock
-```
-
-Mock mode skips the real TODO steps — but once you implement DIAGNOSE, remove `--mock` to verify Step 2 calls Claude correctly before continuing:
+Once you implement DIAGNOSE, remove `--mock` to verify Step 3 calls Claude correctly before continuing:
 
 ```bash
 ANTHROPIC_API_KEY=sk-... python module8/platform_agent.py --simulate
 ```
 
-### Step 7 — Complete `run_step_gate()`
+### Step 4 — Complete `run_step_gate()`
 
 Same pattern. Context combines `event` and `diagnose` result.
 
-### Step 8 — Complete `run_step_fix_or_escalate()`
+### Step 5 — Complete `run_step_fix_or_escalate()`
 
 This step has the key branching logic. After calling `run_step()`:
 
@@ -96,11 +91,11 @@ This step has the key branching logic. After calling `run_step()`:
 
 The AUTO_FIX path only triggers when the system prompt conditions are all met (HIGH confidence + fix_possible=true + no DB migration involved). For the default `--simulate` event, the expected result is ESCALATE.
 
-### Step 9 — Complete `generate_report()`
+### Step 6 — Complete `generate_report()`
 
 Build context from `pipeline_id` and the full `steps` dict, call `run_step()` with `REPORT_PROMPT`.
 
-### Step 8 — Run the full pipeline live
+### Step 7 — Run the full pipeline live
 
 ```bash
 ANTHROPIC_API_KEY=sk-... python module8/platform_agent.py --simulate
@@ -108,7 +103,7 @@ ANTHROPIC_API_KEY=sk-... python module8/platform_agent.py --simulate
 
 All five steps should complete, each printing a JSON block. The final output will show either 🔴 ESCALATION REQUIRED or ✅ Pipeline resolved.
 
-### Step 9 — Trigger via GitHub Actions
+### Step 8 — Trigger via GitHub Actions
 
 Push any commit to your fork to trigger the workflow manually, or use the Actions tab → "Module 8 — Capstone Agent" → "Run workflow".
 
@@ -185,12 +180,32 @@ PLATFORM AGENT — FINAL REPORT
 
 ---
 
-## Step-by-step approach
+## Key Takeaway
 
-- Step 1 (INGEST) is fully implemented so you can see the exact three-line pattern before writing any code yourself.
-- Steps 2–5 are `raise NotImplementedError` stubs — not because the code is hard, but because the pattern is simple enough that writing it four more times ingrains it. - Every production platform agent you build after this course will follow the same pattern: build a context dict, call Claude with a system prompt, parse structured JSON output, pass the result to the next step.
-- The capstone is proving you understand the pattern well enough to replicate it — not that you can write complex code.
-- The recording deliverable exists for the same reason: a 2-minute video of a live pipeline run is something you can show in an interview to demonstrate you built something real.
+The student skeleton is intentional. Step 1 (INGEST) is fully implemented so you can see the exact three-line pattern before writing any code yourself. Steps 2–5 are `raise NotImplementedError` stubs — not because the code is hard, but because the pattern is simple enough that writing it four more times ingrains it. Every production platform agent you build after this course will follow the same pattern: build a context dict, call Claude with a system prompt, parse structured JSON output, pass the result to the next step. The capstone is proving you understand the pattern well enough to replicate it — not that you can write complex code. The recording deliverable exists for the same reason: a 2-minute video of a live pipeline run is something you can show in an interview to demonstrate you built something real.
+
+---
+
+## GitHub Actions
+
+**Workflow file:** `.github/workflows/module8-capstone.yml`
+
+| Property | Value |
+|----------|-------|
+| Workflow name | `Module 8 — Capstone Agent` |
+| Trigger | Manual via Actions tab (with optional `simulate` input), **or** automatically when the "Module 4 — Broken Pipeline" workflow fails |
+| Script run | `python module8/platform_agent.py --simulate` (default) or `python module8/platform_agent.py` (when `simulate=false`) |
+| Output artifact | `module8-capstone-report` → `output/output_module8_platform_agent.json` |
+
+This workflow has two trigger modes:
+
+**Manual trigger:** Actions tab → "Module 8 — Capstone Agent" → Run workflow. You can optionally set `simulate` to `false` to run against `sample_data.json` instead of the synthetic event.
+
+**Automatic trigger:** When the `module4-broken-pipeline` workflow in your repo fails, this workflow fires automatically — but only if the conclusion is `failure`. This connects the two workflows: Module 4 intentionally breaks, Module 8 responds. This is a realistic pattern for production incident pipelines where a CI failure triggers an autonomous diagnosis and remediation agent.
+
+The workflow only runs when `github.event_name == 'workflow_dispatch'` OR `github.event.workflow_run.conclusion == 'failure'`. If Module 4's workflow passes (which it won't — it's intentionally broken), Module 8 does not trigger.
+
+**Prerequisite:** Add your API key as a repository secret named `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → New repository secret). The workflow file must be on your default branch before it appears in the Actions tab.
 
 ---
 
@@ -200,7 +215,7 @@ PLATFORM AGENT — FINAL REPORT
 - `output/output_module8_platform_agent.json` is written and contains all five steps plus `final_output`.
 - ESCALATE path: `final_output.github_issue_title` and `github_issue_body` are non-empty strings.
 - AUTO_FIX path (optional — requires editing `sample_data.json` to a HIGH confidence scenario): a fix script appears in `module8/fixes/`.
-- GitHub Actions workflow completes and the Step Summary is visible in the Actions UI.
+- GitHub Actions workflow completes and `module8-capstone-report` artifact is attached to the run.
 
 ---
 
