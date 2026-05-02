@@ -414,8 +414,15 @@ def run_pipeline(event: dict) -> dict:
     with ThreadPoolExecutor(max_workers=2) as executor:
         future_diagnose = executor.submit(run_step_diagnose, event, steps["ingest"])
         future_gate     = executor.submit(run_step_gate,     event, steps["ingest"])
-        diagnose_result = future_diagnose.result()
-        gate_result     = future_gate.result()
+        try:
+            diagnose_result = future_diagnose.result()
+            gate_result     = future_gate.result()
+        except NotImplementedError as exc:
+            print("\n💡  TODO: One of the parallel step functions is not yet implemented.")
+            print("    Implement run_step_diagnose() and run_step_gate() in platform_agent.py,")
+            print("    following the exact same 3-line pattern as run_step_ingest().")
+            print("    To test the pipeline without implementing, run: python module8/platform_agent.py --simulate --mock")
+            raise
 
     steps["diagnose"] = {**diagnose_result, "status": "completed"}
     steps["gate"]     = {**gate_result,     "status": "completed"}
