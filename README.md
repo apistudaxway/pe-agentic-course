@@ -8,8 +8,11 @@ This repository contains the hands-on exercise code for every module of the cour
 ## Quick Start
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/InternalDeveloperPlatform/pe-agentic-course.git
+# 1. Fork the repo first (required for GitHub Actions secrets)
+#    Go to https://github.com/InternalDeveloperPlatform/pe-agentic-course and click Fork
+
+# 2. Clone YOUR fork
+git clone https://github.com/YOUR_USERNAME/pe-agentic-course.git
 cd pe-agentic-course
 
 # 2. Set your API key
