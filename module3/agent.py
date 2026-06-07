@@ -82,10 +82,43 @@ def run_agent() -> dict:
         # 3. After the loop, assign the final result and let the code below print/save it.
         #
         # Tip: run --mock first to see the expected output shape, then implement.
-        raise NotImplementedError(
-            "Implement run_agent() — build the ReAct loop. See the TODO comment above."
-        )
 
+        history = []
+        result  = {}
+
+        for i in range(AGENT_CONFIG["max_iterations"]):
+            # First call: just the incident. Subsequent calls: incident + full history.
+            # Passing the complete history (not just the last step) lets Claude see
+            # the full investigative trajectory and avoid repeating actions.
+            if history:
+                user_msg = (
+                    f"Incident:\n{incident}\n\n"
+                    f"Previous iterations:\n{json.dumps(history, indent=2)}"
+                )
+            else:
+                user_msg = f"Incident:\n{incident}"
+
+            result = ask(
+                system=SYSTEM_PROMPT,
+                user=user_msg,
+                model=AGENT_CONFIG["model"],
+                max_tokens=AGENT_CONFIG["max_tokens"],
+            )
+
+            print(f"\n[Iteration {i + 1}{'  — FINISHED' if result.get('finished') else ''}]")
+            print(json.dumps(result, indent=2))
+
+            history.append(result)
+
+            # Exit as soon as Claude signals it has enough information.
+            # This is the key ReAct property: the agent decides when to stop.
+            if result.get("finished"):
+                print(f"\n[Loop exited after {i + 1} iteration(s) — finished=True]")
+                break
+        else:
+            # Safety net: loop exhausted without finished=True
+            print(f"\n[Loop reached max_iterations={AGENT_CONFIG['max_iterations']} — using last result]")
+        
     print(json.dumps(result, indent=2))
     save_json(result, module=3)
     print(to_step_summary(result, title="Module 3 Agent Result"))
