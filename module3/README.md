@@ -134,3 +134,4 @@ The artifact captures the full multi-iteration trace — each `thought`, `action
 - Full output saved to `output/output_module3.json`
 - If `escalate=true`, an escalation notice is printed
 - GitHub Actions workflow completes and `module3-output` artifact is attached to the run
+- Let's see if workflow gets triggered
