@@ -52,7 +52,17 @@ MOCK_RESPONSE = {
 #
 # Hint: be explicit about the output format. Claude follows precise instructions well.
 # Check solutions/solution.py only after you have made your own attempt.
-SYSTEM_PROMPT = ""  # Replace this empty string with your prompt
+SYSTEM_PROMPT = """You are a platform engineering assistant specialising in CI/CD pipeline diagnostics.
+
+When the user provides a CI/CD failure log, analyse it and respond with ONLY a valid JSON object — no explanation, no markdown, no code fences, no preamble. Output nothing except the raw JSON.
+
+The JSON object must contain exactly these four keys:
+- "summary": a single sentence describing what failed
+- "likely_cause": a single sentence identifying the root cause
+- "next_step": a single concrete remediation action the engineer should take
+
+Example output shape (values are illustrative only):
+{"summary": "...","likely_cause": "...","next_step": "..."}"""
 
 # ── Sample log (embedded so the script is self-contained) ─────────────────────
 SAMPLE_LOG = (Path(__file__).parent / "sample_log.txt").read_text()

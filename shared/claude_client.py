@@ -9,6 +9,7 @@ import os
 import re
 import json
 import anthropic
+import httpx
 
 
 def _sanitize_json(raw: str) -> str:
@@ -56,7 +57,8 @@ def _get_client() -> anthropic.Anthropic:
                 "ANTHROPIC_API_KEY is not set. "
                 "Run: export ANTHROPIC_API_KEY=your_key_here"
             )
-        _client = anthropic.Anthropic(api_key=api_key)
+        _client = anthropic.Anthropic(api_key=api_key,
+                                    http_client = httpx.Client(verify=False))
     return _client
 
 

@@ -55,7 +55,12 @@ MOCK_RESPONSE = {
 #
 # Hint: be explicit about when escalate should be true vs false.
 # Check solutions/solution.py only after you have made your own attempt.
-SYSTEM_PROMPT = ""  # Replace this empty string with your prompt
+SYSTEM_PROMPT = (
+"You are a CI/CD diagnostics agent"
+"Analyze log input and provide output in JSON"
+"Only include the following keys in the JSON response - summary, likey_cause, next_step, confidence, escalate"
+"If the confidence is not HIGH and/or escalate is true, human intervention is needed"
+)  # Replace this empty string with your prompt
 
 
 def load_sample() -> str:

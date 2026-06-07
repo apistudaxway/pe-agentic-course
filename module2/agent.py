@@ -42,7 +42,7 @@ MOCK_RESPONSE = {
 #      - escalate (boolean): true if a human must review before taking action
 #
 # Hint: look at MOCK_RESPONSE above for the expected output shape.
-SYSTEM_PROMPT = ""  # replace this empty string with your prompt
+SYSTEM_PROMPT = ""
 
 AGENT_CONFIG = {
     "model": "claude-opus-4-5-20251101",
