@@ -29,7 +29,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MOCK_MODE: ${{ secrets.ANTHROPIC_API_KEY == '' && '1' || '0' }}
-        run: python module4/diagnose.py
+        run: python module4/diagnose.py --log build.log
         #run: python module4/triage_agent.py
 
       - name: Upload output artifact
