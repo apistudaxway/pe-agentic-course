@@ -182,3 +182,4 @@ This workflow runs your exercise implementation automatically on every push. It 
 - Full output saved to `output/output_module4.json`
 - GitHub Actions: both workflow runs complete; `module4-triage-output` artifact is attached to the broken-pipeline run
 - If stuck, see `solutions/solution.py`
+- Do nothing
